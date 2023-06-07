@@ -6,7 +6,6 @@ import time
 from datetime import datetime, date
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from telegram import Bot
 import pandas as pd
 import ta
 from alpaca.data.historical import CryptoHistoricalDataClient
