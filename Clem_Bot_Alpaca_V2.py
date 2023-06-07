@@ -25,8 +25,6 @@ def main():
                         format='%(asctime)s - %(levelname)s - %(message)s')  # , filename='Log_Bot_Alpaca.log')
     logger = logging.getLogger()
 
-    TOKEN = "6185344396:AAHTuMLCnxQIYRttR1xoZ7MG_pMZW75Ufkk"
-
     API_KEY = 'PKLYQ5IN21W1YS4CJ6GB'
     API_SECRET = 'RGaZhoKS4NzZQJyPn5ZMty82WJh1ycTM6vigqHpL'
     BASE_URL = 'https://paper-api.alpaca.markets'
@@ -100,7 +98,7 @@ def main():
             Ratio_Delta_Volume.append(0)
 
     df['Delta Oscillator 24h'] = Oscillator_24
-    df['Delta 24h'] = Delta_24
+    df['Delta Spot 24h'] = Delta_24
     df['Ratio Delta Volume'] = Ratio_Delta_Volume
 
     Trading_Client = TradingClient(API_KEY, API_SECRET, paper=PAPER_BOOL)
@@ -223,22 +221,55 @@ def main():
         logger.info(ORDER_MESSAGE)
 
     List_Columns = df.columns.to_list()
-    col_ema1 = List_Columns.index('EMA1')
-    col_ema2 = List_Columns.index('EMA2')
-    col_ema3 = List_Columns.index('EMA3')
-    col_ema4 = List_Columns.index('EMA4')
-    col_rsi = List_Columns.index('RSI')
-    col_deltavol24 = List_Columns.index('Delta Oscillator 24h')
-    col_deltacours24 = List_Columns.index('Delta 24h')
+    Col_EMA1 = List_Columns.index('EMA1')
+    Col_EMA2 = List_Columns.index('EMA2')
+    Col_EMA3 = List_Columns.index('EMA3')
+    Col_EMA4 = List_Columns.index('EMA4')
+    Col_RSI = List_Columns.index('RSI')
+    Col_Delta_Osc_24 = List_Columns.index('Delta Oscillator 24h')
+    Col_Delta_Spot_24 = List_Columns.index('Delta Spot 24h')
+
+    df['Delta Oscillator 24h'] = Oscillator_24
+    df['Delta Spot 24h'] = Delta_24
+    df['Ratio Delta Volume'] = Ratio_Delta_Volume
 
     msg = MIMEMultipart()
     msg["From"] = FROM_ADDRESS
     msg["To"] = TO_ADDRESS
     msg["Subject"] = "Bot Notification"
 
-    TEXT = ORDER_MESSAGE + "\n"
+    if ALL_POSITION:
+        TEXT_DATA = 'USD Balance : ' + str(USD_BALANCE) + "\n" + \
+                    'Crypto Position : ' + CRYPTO_SIDE + "\n" + \
+                    'Quantity : ' + str(CRYPTO_QTY) + "\n" + \
+                    'Current Price : ' + str(CRYPTO_CURRENT_PRICE) + "\n" + \
+                    'Market Value : ' + str(CRYPTO_MARKET_VALUE) + "\n" + \
+                    'Total Equity : ' + str(EQUITY) + "\n" + \
+                    '________________________________________'
+    else:
+        TEXT_DATA = 'USD Balance : ' + str(USD_BALANCE) + "\n" + \
+                    'Crypto Position : ' + str(CRYPTO_SIDE) + "\n" + \
+                    'Quantity : ' + str(0) + "\n" + \
+                    'Current Price : ' + str(round(df['close'][-1], 2)) + "\n" + \
+                    'Total Equity : ' + str(EQUITY) + "\n" + \
+                    '________________________________________'
 
-    msg.attach(MIMEText(TEXT, "plain"))
+    INDICATOR = "EMA21 = " + str(df.iloc[-1, Col_EMA1]) + "\n" + \
+                "EMA50 = " + str(df.iloc[-1, Col_EMA2]) + "\n" + \
+                "EMA100 = " + str(df.iloc[-1, Col_EMA3]) + "\n" + \
+                "EMA200 = " + str(df.iloc[-1, Col_EMA4]) + "\n" + \
+                "RSI = " + str(df.iloc[-1, Col_RSI]) + "\n" + \
+                "Delta Oscillator 24h = " + str(df.iloc[-1, Col_Delta_Osc_24]) + "\n" + \
+                "Delta Spot 24h = " + str(df.iloc[-1, Col_Delta_Spot_24])
+
+    MAIL_TEXT = SYMBOL + "\n\n" + \
+                TEXT_DATA + "\n" + \
+                CONDITION + "\n" + \
+                ORDER_MESSAGE + "\n" + \
+                '________________________________________'+ "\n\n" + \
+                INDICATOR
+
+    msg.attach(MIMEText(MAIL_TEXT, "plain"))
 
     server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
     server.starttls()
@@ -247,28 +278,6 @@ def main():
     server.quit()
 
     logger.info("Mail sent successfully")
-
-
-    if ALL_POSITION:
-        TEXT_DATA = 'USD Balance : ' + str(USD_BALANCE) + "\n" + \
-                    'Crypto Position : ' + CRYPTO_SIDE + "\n" + \
-                    'Quantity : ' + str(CRYPTO_QTY) + "\n" + \
-                    'Current Price : ' + str(CRYPTO_CURRENT_PRICE) + "\n" + \
-                    'Market Value : ' + str(CRYPTO_MARKET_VALUE) + "\n" + \
-                    'Total Equity : ' + str(EQUITY)
-    else:
-        TEXT_DATA = 'USD Balance : ' + str(USD_BALANCE) + "\n" + \
-                    'Crypto Position : ' + str(CRYPTO_SIDE) + "\n" + \
-                    'Quantity : ' + str(0) + "\n" + \
-                    'Current Price : ' + str(round(df['close'][-1], 2)) + "\n" + \
-                    'Total Equity : ' + str(EQUITY)
-
-    TELEGRAM_TEXT = 'Connecting to Alpaca Crypto Historical API' + "\n" + \
-                    MSG + "\n" + \
-                    TEXT_DATA + "\n" + \
-                    CONDITION + "\n" + \
-                    ORDER_MESSAGE
-
 
     logger.info("________________________________________________________________")
 
